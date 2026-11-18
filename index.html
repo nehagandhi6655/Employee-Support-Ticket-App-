@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Support Ticket App - Day 4 Lab</title>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #3b82f6;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --info: #0284c7;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 24px; line-height: 1.5; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        header { display: flex; justify-content: space-between; align-items: center; background: var(--primary); color: white; padding: 18px 24px; border-radius: 10px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.4rem; font-weight: 700; }
+        .user-switch { display: flex; align-items: center; gap: 12px; }
+        .user-switch select { padding: 6px 12px; border-radius: 6px; border: none; font-weight: 600; cursor: pointer; }
+        .grid { display: grid; grid-template-columns: 360px 1fr; gap: 24px; }
+        .card { background: var(--card-bg); border-radius: 10px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        .form-group { margin-bottom: 14px; }
+        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+        input, select, textarea { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; }
+        textarea { resize: vertical; min-height: 80px; }
+        button { background: var(--primary-light); color: white; border: none; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s; }
+        button:hover { background: var(--primary); }
+        .badge { display: inline-block; padding: 3px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; }
+        .badge-open { background: #dbeafe; color: #1e40af; }
+        .badge-inprogress { background: #fef3c7; color: #92400e; }
+        .badge-resolved { background: #dcfce7; color: #166534; }
+        .badge-closed { background: #f1f5f9; color: #475569; }
+        .badge-high { background: #fee2e2; color: #991b1b; }
+        .badge-medium { background: #ffedd5; color: #9a3412; }
+        .badge-low { background: #f0fdf4; color: #166534; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px 12px; text-align: left; font-size: 0.875rem; border-bottom: 1px solid var(--border); }
+        th { background: #f1f5f9; font-weight: 600; color: var(--muted); }
+        tr:hover { background: #f8fafc; }
+        .filter-bar { display: flex; gap: 10px; margin-bottom: 14px; }
+        .filter-bar select { width: auto; font-size: 0.85rem; }
+        .ticket-action { display: flex; gap: 6px; align-items: center; }
+        .ticket-action select { padding: 4px 8px; font-size: 0.8rem; width: auto; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; border-radius: 10px; width: 500px; max-width: 90%; padding: 20px; max-height: 85vh; overflow-y: auto; }
+        .comment-item { background: #f8fafc; border-left: 3px solid var(--primary-light); padding: 8px 12px; margin-bottom: 8px; border-radius: 4px; font-size: 0.85rem; }
+        .comment-meta { font-size: 0.75rem; color: var(--muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .alert { padding: 10px 14px; border-radius: 6px; font-size: 0.85rem; margin-bottom: 12px; display: none; }
+        .alert-error { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+        .security-notice { font-size: 0.75rem; color: var(--muted); margin-bottom: 14px; text-align: right; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1>Support Desk Portal</h1>
+                <p style="font-size: 0.85rem; opacity: 0.9;">Day 4 Spec-Driven Development Demo</p>
+            </div>
+            <div class="user-switch">
+                <label for="currentUser" style="color:white; margin:0;">Active User:</label>
+                <select id="currentUser" onchange="switchUser()">
+                    <option value="Ravi|employee">Ravi (Employee)</option>
+                    <option value="Priya|employee">Priya (Employee)</option>
+                    <option value="Amit|employee">Amit (Employee)</option>
+                    <option value="Sneha|employee">Sneha (Employee)</option>
+                    <option value="Kiran|support">Kiran (Support Staff)</option>
+                </select>
+            </div>
+        </header>
+
+        <div class="security-notice">
+            * <em>Notice: Active user simulation uses client-controlled headers (X-User-Name, X-User-Role) for local training/demo purposes only.</em>
+        </div>
+
+        <div id="alertBox" class="alert"></div>
+
+        <div class="grid">
+            <!-- Left: Raise Ticket Form -->
+            <div class="card" id="submitCard">
+                <h2>Raise Support Ticket</h2>
+                <div class="form-group">
+                    <label for="ticketTitle">Ticket Title (max 100 chars)*</label>
+                    <input type="text" id="ticketTitle" maxlength="100" placeholder="e.g. Laptop not charging">
+                </div>
+                <div class="form-group">
+                    <label for="ticketCategory">Category*</label>
+                    <select id="ticketCategory">
+                        <option value="Hardware">Hardware</option>
+                        <option value="Software">Software</option>
+                        <option value="Network">Network</option>
+                        <option value="Access">Access</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ticketPriority">Priority*</label>
+                    <select id="ticketPriority">
+                        <option value="High">High</option>
+                        <option value="Medium" selected>Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ticketDesc">Description*</label>
+                    <textarea id="ticketDesc" placeholder="Describe the issue in detail..."></textarea>
+                </div>
+                <button onclick="submitTicket()">Submit Ticket</button>
+            </div>
+
+            <!-- Right: Tickets List -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h2>Tickets Overview (<span id="ticketCount">0</span>)</h2>
+                    <div class="filter-bar">
+                        <select id="priorityFilter" onchange="renderTickets()">
+                            <option value="ALL">All Priorities</option>
+                            <option value="High">High</option>
+                            <option value="Medium">Medium</option>
+                            <option value="Low">Low</option>
+                        </select>
+                        <select id="statusFilter" onchange="renderTickets()">
+                            <option value="ALL">All Statuses</option>
+                            <option value="Open">Open</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Resolved">Resolved</option>
+                            <option value="Closed">Closed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Title</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Created By</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ticketsBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Ticket Details & Comments -->
+    <div id="ticketModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle" style="color:var(--primary); font-size:1.1rem; margin-bottom:12px;">Ticket Details</h2>
+            <div id="modalDetails" style="font-size:0.875rem; margin-bottom:16px; line-height:1.6;"></div>
+            
+            <h3 style="font-size:0.95rem; margin-bottom:8px;">Comments</h3>
+            <div id="commentsList" style="max-height:180px; overflow-y:auto; margin-bottom:12px;"></div>
+            
+            <div class="form-group" style="margin-bottom:8px;">
+                <textarea id="newCommentText" placeholder="Add a comment... (Allowed even on Closed tickets)"></textarea>
+            </div>
+            <div style="display:flex; gap:8px;">
+                <button onclick="postComment()" style="background:var(--success);">Post Comment</button>
+                <button onclick="closeModal()" style="background:var(--muted);">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State loaded from backend API
+        let tickets = [];
+        let activeTicketId = null;
+
+        function getCurrentUser() {
+            const raw = document.getElementById("currentUser").value.split("|");
+            return { username: raw[0], role: raw[1] };
+        }
+
+        function getAuthHeaders() {
+            const user = getCurrentUser();
+            return {
+                "Content-Type": "application/json",
+                "X-User-Name": user.username,
+                "X-User-Role": user.role
+            };
+        }
+
+        function showAlert(msg, isError = true) {
+            const el = document.getElementById("alertBox");
+            el.className = isError ? "alert alert-error" : "alert alert-success";
+            el.innerText = msg;
+            el.style.display = "block";
+            setTimeout(() => { el.style.display = "none"; }, 4000);
+        }
+
+        async function switchUser() {
+            const user = getCurrentUser();
+            document.getElementById("submitCard").style.display = user.role === "employee" ? "block" : "none";
+            await loadTickets();
+        }
+
+        async function loadTickets() {
+            const user = getCurrentUser();
+            try {
+                const res = await fetch("/api/tickets", {
+                    method: "GET",
+                    headers: {
+                        "X-User-Name": user.username,
+                        "X-User-Role": user.role
+                    }
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ error: "Failed to load tickets." }));
+                    showAlert(err.error || "Failed to load tickets.");
+                    return;
+                }
+                tickets = await res.json();
+                renderTickets();
+            } catch (err) {
+                showAlert("Network error connecting to backend service: " + err.message);
+            }
+        }
+
+        function renderTickets() {
+            const user = getCurrentUser();
+            const pFilter = document.getElementById("priorityFilter").value;
+            const sFilter = document.getElementById("statusFilter").value;
+            const tbody = document.getElementById("ticketsBody");
+            tbody.innerHTML = "";
+
+            let filtered = [...tickets];
+            if (pFilter !== "ALL") filtered = filtered.filter(t => t.priority === pFilter);
+            if (sFilter !== "ALL") filtered = filtered.filter(t => t.status === sFilter);
+
+            document.getElementById("ticketCount").innerText = filtered.length;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:var(--muted); padding:20px;">No tickets found.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(t => {
+                const tr = document.createElement("tr");
+                const statusBadge = `<span class="badge badge-${t.status.toLowerCase().replace(' ', '')}">${t.status}</span>`;
+                const priorityBadge = `<span class="badge badge-${t.priority.toLowerCase()}">${t.priority}</span>`;
+
+                let actionHtml = `<button onclick="openModal(${t.id})" style="padding:4px 8px; font-size:0.75rem; width:auto; background:var(--info);">View / Comment</button>`;
+
+                // Rule 1: Only support staff can change ticket status
+                if (user.role === "support") {
+                    actionHtml += `
+                        <select onchange="changeStatus(${t.id}, this.value)" style="margin-left:6px; font-size:0.75rem; padding:3px 6px; width:auto;">
+                            <option value="Open" ${t.status === 'Open' ? 'selected' : ''}>Open</option>
+                            <option value="In Progress" ${t.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                            <option value="Resolved" ${t.status === 'Resolved' ? 'selected' : ''}>Resolved</option>
+                            <option value="Closed" ${t.status === 'Closed' ? 'selected' : ''}>Closed</option>
+                        </select>
+                    `;
+                }
+
+                tr.innerHTML = `
+                    <td><strong>#${t.id}</strong></td>
+                    <td>${t.title}</td>
+                    <td>${t.category}</td>
+                    <td>${priorityBadge}</td>
+                    <td>${statusBadge}</td>
+                    <td>${t.created_by}</td>
+                    <td><div class="ticket-action">${actionHtml}</div></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function submitTicket() {
+            const user = getCurrentUser();
+            if (user.role !== "employee") {
+                showAlert("Only employees can submit tickets.");
+                return;
+            }
+
+            const title = document.getElementById("ticketTitle").value.trim();
+            const desc = document.getElementById("ticketDesc").value.trim();
+            const category = document.getElementById("ticketCategory").value;
+            const priority = document.getElementById("ticketPriority").value;
+
+            // Rule 4: Title and description can't be empty
+            if (!title) {
+                showAlert("Title is required and cannot be empty.");
+                return;
+            }
+            if (title.length > 100) {
+                showAlert("Title cannot exceed 100 characters.");
+                return;
+            }
+            if (!desc) {
+                showAlert("Description is required and cannot be empty.");
+                return;
+            }
+
+            try {
+                const res = await fetch("/api/tickets", {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        title: title,
+                        description: desc,
+                        category: category,
+                        priority: priority
+                    })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showAlert(data.error || "Failed to submit ticket.");
+                    return;
+                }
+                document.getElementById("ticketTitle").value = "";
+                document.getElementById("ticketDesc").value = "";
+                showAlert(`Ticket #${data.id} submitted successfully!`, false);
+                await loadTickets();
+            } catch (err) {
+                showAlert("Network error: " + err.message);
+            }
+        }
+
+        async function changeStatus(ticketId, newStatus) {
+            const user = getCurrentUser();
+            if (user.role !== "support") {
+                showAlert("Permission denied: Only support staff can change ticket status.");
+                await loadTickets();
+                return;
+            }
+            try {
+                const res = await fetch(`/api/tickets/${ticketId}/status`, {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ status: newStatus })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showAlert(data.error || "Failed to update status.");
+                    await loadTickets();
+                    return;
+                }
+                showAlert(`Ticket #${data.id} status updated to ${data.status}.`, false);
+                await loadTickets();
+            } catch (err) {
+                showAlert("Network error: " + err.message);
+            }
+        }
+
+        async function openModal(ticketId) {
+            activeTicketId = ticketId;
+            const user = getCurrentUser();
+            try {
+                const res = await fetch(`/api/tickets/${ticketId}`, {
+                    headers: {
+                        "X-User-Name": user.username,
+                        "X-User-Role": user.role
+                    }
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    showAlert(err.error || "Failed to fetch ticket details.");
+                    return;
+                }
+                const t = await res.json();
+                document.getElementById("modalTitle").innerText = `#${t.id}: ${t.title}`;
+                document.getElementById("modalDetails").innerHTML = `
+                    <p><strong>Category:</strong> ${t.category} | <strong>Priority:</strong> ${t.priority} | <strong>Status:</strong> ${t.status}</p>
+                    <p><strong>Created By:</strong> ${t.created_by} on ${t.created_date} | <strong>Updated:</strong> ${t.last_updated_date}</p>
+                    <p style="margin-top:6px; background:#f1f5f9; padding:8px; border-radius:4px;"><strong>Description:</strong> ${t.description}</p>
+                `;
+                renderComments(t);
+                document.getElementById("ticketModal").style.display = "flex";
+            } catch (err) {
+                showAlert("Network error: " + err.message);
+            }
+        }
+
+        function renderComments(t) {
+            const cl = document.getElementById("commentsList");
+            cl.innerHTML = "";
+            const comments = t.comments || [];
+            if (comments.length === 0) {
+                cl.innerHTML = `<p style="font-size:0.8rem; color:var(--muted);">No comments yet.</p>`;
+                return;
+            }
+            comments.forEach(c => {
+                const el = document.createElement("div");
+                el.className = "comment-item";
+                el.innerHTML = `
+                    <div class="comment-meta">
+                        <span><strong>${c.author}</strong> (${c.role})</span>
+                        <span>${c.created_date}</span>
+                    </div>
+                    <div>${c.text}</div>
+                `;
+                cl.appendChild(el);
+            });
+        }
+
+        async function postComment() {
+            const user = getCurrentUser();
+            const text = document.getElementById("newCommentText").value.trim();
+            if (!text) {
+                showAlert("Comment cannot be empty.");
+                return;
+            }
+            if (!activeTicketId) return;
+
+            try {
+                const res = await fetch(`/api/tickets/${activeTicketId}/comments`, {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ text: text })
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    showAlert(data.error || "Failed to add comment.");
+                    return;
+                }
+                document.getElementById("newCommentText").value = "";
+                showAlert("Comment added successfully!", false);
+                await openModal(activeTicketId);
+                await loadTickets();
+            } catch (err) {
+                showAlert("Network error: " + err.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById("ticketModal").style.display = "none";
+            activeTicketId = null;
+        }
+
+        // Initialize application on page load
+        switchUser();
+    </script>
+</body>
+</html>
