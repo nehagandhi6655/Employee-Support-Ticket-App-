@@ -3,7 +3,7 @@
 **Day 4 Lab: Spec-Driven Development & Agentic Coding**  
 **Author:** Neha Tothadi (ID: 1899)  
 **Date:** 18 Nov 2026  
-**Repository:** `https://github.com/SoniaSudireddy/employee-support-ticket-app`
+**Repository:** `https://github.com/nehagandhi6655/Employee-Support-Ticket-App-.git`
 
 ---
 
